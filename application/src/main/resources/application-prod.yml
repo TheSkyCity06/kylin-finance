@@ -1,0 +1,119 @@
+# ==========================================
+# 生产环境配置
+# ==========================================
+# 注意：敏感信息应通过环境变量注入，不要直接写在此文件中
+# ==========================================
+
+server:
+  port: 8080
+  servlet:
+    context-path: /
+  # 生产环境建议启用 HTTPS
+  # ssl:
+  #   enabled: true
+  #   key-store: classpath:keystore.p12
+  #   key-store-password: ${KEYSTORE_PASSWORD}
+  #   key-store-type: PKCS12
+
+spring:
+  application:
+    name: kylin-finance
+  
+  profiles:
+    active: prod
+
+  # ==========================================
+  # 数据库连接配置（使用环境变量）
+  # ==========================================
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    type: com.zaxxer.hikari.HikariDataSource
+    
+    # ⚠️ 生产环境必须使用环境变量，不要硬编码密码
+    url: jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3306}/${DB_NAME:kylin_finance}?useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai&useSSL=true&requireSSL=true&verifyServerCertificate=false
+    username: ${DB_USERNAME:kylin_app}
+    password: ${DB_PASSWORD:CHANGE_ME}
+    
+    # 生产环境连接池配置（根据实际负载调整）
+    hikari:
+      minimum-idle: 10
+      maximum-pool-size: 50
+      auto-commit: true
+      idle-timeout: 300000
+      pool-name: KylinHikariCP-Prod
+      max-lifetime: 1800000
+      connection-timeout: 30000
+      connection-test-query: SELECT 1
+      leak-detection-threshold: 60000
+
+  # ==========================================
+  # JSON 配置
+  # ==========================================
+  jackson:
+    date-format: yyyy-MM-dd HH:mm:ss
+    time-zone: Asia/Shanghai
+    serialization:
+      write-dates-as-timestamps: false
+
+# ==========================================
+# MyBatis-Plus 配置
+# ==========================================
+mybatis-plus:
+  mapper-locations: classpath*:mapper/**/*Mapper.xml
+  type-aliases-package: com.kylin.**.entity
+  configuration:
+    # 生产环境关闭 SQL 日志（避免敏感信息泄露）
+    log-impl: org.apache.ibatis.logging.slf4j.Slf4jImpl
+    map-underscore-to-camel-case: true
+    cache-enabled: true
+  global-config:
+    db-config:
+      id-type: assign_id
+      logic-delete-value: 1
+      logic-not-delete-value: 0
+
+# ==========================================
+# 日志配置
+# ==========================================
+logging:
+  level:
+    root: INFO
+    com.kylin: INFO
+    org.springframework: WARN
+    org.mybatis: WARN
+    com.zaxxer.hikari: WARN
+  file:
+    path: /var/log/kylin-finance
+    name: ${logging.file.path}/app.log
+  logback:
+    rollingpolicy:
+      max-file-size: 100MB
+      max-history: 30
+      total-size-cap: 3GB
+
+# ==========================================
+# 监控端点配置（生产环境限制访问）
+# ==========================================
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+      base-path: /actuator
+  endpoint:
+    health:
+      show-details: when-authorized
+  metrics:
+    export:
+      prometheus:
+        enabled: false  # 如果使用 Prometheus 监控，设置为 true
+
+# ==========================================
+# 应用自定义配置
+# ==========================================
+app:
+  name: kylin-finance
+  version: 1.0.0
+  description: 麒麟财务管理系统
+
+

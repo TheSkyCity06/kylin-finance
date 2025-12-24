@@ -1,0 +1,85 @@
+# ==========================================
+# 服务器基础配置
+# ==========================================
+server:
+  port: 8080                # 服务端口号，如果被占用可以改为 8081
+  servlet:
+    context-path: /         # 项目访问路径，默认是 /
+
+spring:
+  application:
+    name: kylin-finance     # 应用名称
+
+  # ==========================================
+  # 环境配置 (解决 no profiles active 问题)
+  # ==========================================
+  profiles:
+    active: dev             # 默认激活开发环境
+
+  # ==========================================
+  # 数据库连接配置 (关键部分)
+  # ==========================================
+  datasource:
+    # 数据库驱动 (MySQL 8.0+ 推荐使用 cj.jdbc.Driver)
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    # 数据库连接池类型 (Spring Boot 默认 Hikari)
+    type: com.zaxxer.hikari.HikariDataSource
+
+    # ⚠️ 请修改以下三项为你自己的数据库信息
+    # url 解释:
+    # 1. localhost:3306 -> 数据库地址和端口
+    # 2. kylin_finance  -> 你的数据库名称 (如果库名不同，请修改这里)
+    # 3. useUnicode...  -> 防止中文乱码
+    # 4. serverTimezone -> 设置时区为上海，防止时间差8小时
+    url: jdbc:mysql://localhost:3306/kylin_finance?useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true
+    username: root          # 数据库账号
+    password: Sun050714 # 数据库密码 (⚠️一定要改！)
+
+    # 连接池详细配置 (可选，保持默认即可，优化性能用)
+    hikari:
+      minimum-idle: 5
+      maximum-pool-size: 15
+      auto-commit: true
+      idle-timeout: 30000
+      pool-name: KylinHikariCP
+      max-lifetime: 1800000
+      connection-timeout: 30000
+
+  # ==========================================
+  # JSON 时间格式化 (解决前端传参时间报错问题)
+  # ==========================================
+  jackson:
+    date-format: yyyy-MM-dd HH:mm:ss
+    time-zone: Asia/Shanghai
+
+# ==========================================
+# MyBatis-Plus 核心配置
+# ==========================================
+mybatis-plus:
+  # 1. 自动映射 XML 文件位置
+  # 表示扫描 classpath 下 mapper 目录及子目录中所有以 Mapper.xml 结尾的文件
+  mapper-locations: classpath*:mapper/**/*Mapper.xml
+
+  # 2. 实体类别名包 (减少 XML 中的全类名书写)
+  type-aliases-package: com.kylin.**.domain
+
+  configuration:
+    # 3. 开启 SQL 日志打印 (非常重要！能在控制台看到 SQL 语句)
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+    # 开启驼峰命名自动转换 (user_name -> userName)
+    map-underscore-to-camel-case: true
+
+  global-config:
+    db-config:
+      # 主键生成策略 (ASSIGN_ID 使用雪花算法生成 Long 类型 ID，推荐)
+      id-type: assign_id
+      # 逻辑删除字段配置 (0未删除，1已删除)
+      logic-delete-value: 1
+      logic-not-delete-value: 0
+
+# ==========================================
+# JWT 配置
+# ==========================================
+jwt:
+  secret: kylin-finance-secret-key-for-jwt-token-generation-minimum-256-bits-please-change-in-production
+  expiration: 86400000  # Token 过期时间（毫秒），默认24小时

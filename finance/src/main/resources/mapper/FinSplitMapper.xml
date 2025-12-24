@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.kylin.finance.mapper.FinSplitMapper">
+
+    <!-- 批量查询科目余额（指定日期之前） -->
+    <select id="selectBalanceByAccountIds" resultType="com.kylin.finance.dto.AccountBalanceSummary">
+        SELECT 
+            s.account_id AS accountId,
+            COALESCE(SUM(CASE WHEN s.direction = 'DEBIT' THEN s.amount ELSE 0 END), 0) AS debitAmount,
+            COALESCE(SUM(CASE WHEN s.direction = 'CREDIT' THEN s.amount ELSE 0 END), 0) AS creditAmount
+        FROM fin_split s
+        INNER JOIN fin_transaction t ON s.trans_id = t.trans_id
+        WHERE s.is_deleted = 0
+          AND t.status = 1
+          AND t.trans_date &lt;= #{endDate}
+        <if test="accountIds != null and accountIds.size() > 0">
+            AND s.account_id IN
+            <foreach collection="accountIds" item="accountId" open="(" separator="," close=")">
+                #{accountId}
+            </foreach>
+        </if>
+        GROUP BY s.account_id
+    </select>
+
+    <!-- 批量查询科目期间发生额（指定日期范围内） -->
+    <select id="selectPeriodAmountByAccountIds" resultType="com.kylin.finance.dto.AccountBalanceSummary">
+        SELECT 
+            s.account_id AS accountId,
+            COALESCE(SUM(CASE WHEN s.direction = 'DEBIT' THEN s.amount ELSE 0 END), 0) AS debitAmount,
+            COALESCE(SUM(CASE WHEN s.direction = 'CREDIT' THEN s.amount ELSE 0 END), 0) AS creditAmount
+        FROM fin_split s
+        INNER JOIN fin_transaction t ON s.trans_id = t.trans_id
+        WHERE s.is_deleted = 0
+          AND t.status = 1
+          AND t.trans_date &gt;= #{startDate}
+          AND t.trans_date &lt;= #{endDate}
+        <if test="accountIds != null and accountIds.size() > 0">
+            AND s.account_id IN
+            <foreach collection="accountIds" item="accountId" open="(" separator="," close=")">
+                #{accountId}
+            </foreach>
+        </if>
+        GROUP BY s.account_id
+    </select>
+
+</mapper>
+
